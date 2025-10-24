@@ -278,19 +278,19 @@ async def create_subscription_for_user(
 
 
 @router.get("/subscription")
-async def get_user_subscription(current_user: User = Depends(get_current_active_user), subscription: Subscription = Depends(get_subscription)):
+async def get_user_subscription(current_user: User = Depends(get_current_active_user)):
     """Get current user's subscription information"""
     subscriptions_collection = user_db["subscriptions"]
-    print("!!!!!!!!!!!!!!!!!!!!!!!!!", subscriptions_collection)
     subscription_doc = subscriptions_collection.find_one({
         "user_id": current_user.id
     }, sort=[("created_at", -1)])  # Get most recent subscription
+    
     if subscription_doc:
         subscription_doc["id"] = str(subscription_doc["_id"])
         del subscription_doc["_id"]
         return {"subscription": subscription_doc}
     
-    return subscription
+    return {"subscription": None}
 
 
 @router.post("/cancel-subscription")
