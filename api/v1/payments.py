@@ -8,7 +8,7 @@ from core.models import (
     User, Subscription
 )
 from motor.motor_asyncio import AsyncIOMotorClient
-from core.auth import get_current_active_user, get_user_by_email
+from core.auth import get_current_active_user, get_user_by_email, get_subscription
 from core.config import settings
 from core.database import user_db
 from core.payments import (
@@ -278,7 +278,7 @@ async def create_subscription_for_user(
 
 
 @router.get("/subscription")
-async def get_user_subscription(current_user: User = Depends(get_current_active_user)):
+async def get_user_subscription(current_user: User = Depends(get_current_active_user), subscription: Subscription = Depends(get_subscription)):
     print("aaaaaa")
     """Get current user's subscription information"""
     subscriptions_collection = user_db["subscriptions"]
@@ -291,7 +291,7 @@ async def get_user_subscription(current_user: User = Depends(get_current_active_
         del subscription_doc["_id"]
         return {"subscription": subscription_doc}
     
-    return {"subscription1": None}
+    return subscription
 
 
 @router.post("/cancel-subscription")
