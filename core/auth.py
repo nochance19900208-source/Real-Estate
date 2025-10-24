@@ -159,7 +159,7 @@ async def get_current_user(token: str = Depends(oauth2_scheme)) -> User:
         updated_at=user.updated_at
     )
 
-async def get_subscriptions(token: str = Depends(oauth2_scheme)) -> User:
+async def get_subscriptions(token: str = Depends(oauth2_scheme)) -> Subscription:
     """Get current authenticated user"""
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
@@ -167,19 +167,18 @@ async def get_subscriptions(token: str = Depends(oauth2_scheme)) -> User:
         headers={"WWW-Authenticate": "Bearer"},
     )
     token_data = verify_token(token, credentials_exception)
-    user = await get_subscriptions1(email=token_data.email)
-    if user is None:
+    subscription = await get_subscriptions1(email=token_data.email)
+    if subscription is None:
         raise credentials_exception
     
     # Convert UserInDB to User (remove password hash)
-    return User(
-        id="1",
-        email=user.email,
-        name=user.name,
-        role=user.role,
-        is_active=user.is_active,
-        created_at=user.created_at,
-        updated_at=user.updated_at
+    return Subscription(
+        user_id="1",
+        starts_at=subscription.starts_at,
+        ends_at=subscription.ends_at,
+        status=subscription.status,
+        created_at=subscription.created_at,
+        updated_at=subscription.updated_at
     )
 
 async def get_current_active_user(current_user: User = Depends(get_current_user)) -> User:
