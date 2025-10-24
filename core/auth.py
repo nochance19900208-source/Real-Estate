@@ -119,12 +119,12 @@ async def get_user_by_email(email: str) -> Optional[UserInDB]:
 
 async def get_subscriptions1(email: str) -> Optional[UserInDB]:
     """Get user from database by email"""
-    users_collection = user_db["subscriptions"]
-    user_doc = users_collection.find_one({"email": email})
-    if user_doc:
-        user_doc["id"] = str(user_doc["_id"])
-        del user_doc["_id"]
-        return UserInDB(**user_doc)
+    subscriptions_collection = user_db["subscriptions"]
+    subscriptions_doc = subscriptions_collection.find_one({"email": email})
+    if subscriptions_doc:
+        subscriptions_doc["id"] = str(subscriptions_doc["_id"])
+        del subscriptions_doc["_id"]
+        return UserInDB(**subscriptions_doc)
     return None
 
 async def authenticate_user(email: str, password: str) -> Optional[UserInDB]:
