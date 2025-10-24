@@ -35,7 +35,7 @@ async def check_email(email_data: dict, request: Request):
     try:
         # Get client IP for rate limiting
         client_ip = request.client.host
-        
+        #
         # Rate limiting: max 10 requests per minute per IP
         current_time = time.time()
         if client_ip in email_check_requests:
