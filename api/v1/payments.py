@@ -5,7 +5,7 @@ from pydantic import BaseModel
 from dotenv import load_dotenv
 from core.models import (
     SubscriptionCreateWithUser, SubscriptionCreate, PaymentResponse, 
-    User
+    User, Subscription
 )
 from motor.motor_asyncio import AsyncIOMotorClient
 from core.auth import get_current_active_user, get_user_by_email
@@ -291,7 +291,7 @@ async def get_user_subscription(current_user: User = Depends(get_current_active_
         del subscription_doc["_id"]
         return {"subscription": subscription_doc}
     
-    return {"subscription": None}
+    return {"subscription1": None}
 
 
 @router.post("/cancel-subscription")
