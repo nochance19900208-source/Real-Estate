@@ -117,6 +117,16 @@ async def get_user_by_email(email: str) -> Optional[UserInDB]:
         return UserInDB(**user_doc)
     return None
 
+async def get_subscriptions1(email: str) -> Optional[UserInDB]:
+    """Get user from database by email"""
+    users_collection = user_db["subscriptions"]
+    user_doc = users_collection.find_one({"email": email})
+    if user_doc:
+        user_doc["id"] = str(user_doc["_id"])
+        del user_doc["_id"]
+        return UserInDB(**user_doc)
+    return None
+
 async def authenticate_user(email: str, password: str) -> Optional[UserInDB]:
     """Authenticate user with email and password"""
     user = await get_user_by_email(email)
@@ -149,13 +159,36 @@ async def get_current_user(token: str = Depends(oauth2_scheme)) -> User:
         updated_at=user.updated_at
     )
 
+async def get_subscriptions(token: str = Depends(oauth2_scheme)) -> User:
+    """Get current authenticated user"""
+    credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Could not validate credentials",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+    token_data = verify_token(token, credentials_exception)
+    user = await get_subscriptions1(email=token_data.email)
+    if user is None:
+        raise credentials_exception
+    
+    # Convert UserInDB to User (remove password hash)
+    return User(
+        id="1",
+        email=user.email,
+        name=user.name,
+        role=user.role,
+        is_active=user.is_active,
+        created_at=user.created_at,
+        updated_at=user.updated_at
+    )
+
 async def get_current_active_user(current_user: User = Depends(get_current_user)) -> User:
     """Get current active user"""
     if not current_user.is_active:
         raise HTTPException(status_code=400, detail="Inactive user")
     return current_user
 
-async def get_subscription(current_user: Subscription = Depends(get_current_user)) -> Subscription:
+async def get_subscription(current_user: Subscription = Depends(get_subscriptions)) -> Subscription:
     """Get current active user"""
     if not current_user.is_active:
         raise HTTPException(status_code=400, detail="Inactive user")
