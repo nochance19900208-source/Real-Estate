@@ -279,6 +279,7 @@ async def create_subscription_for_user(
 
 @router.get("/subscription")
 async def get_user_subscription(current_user: User = Depends(get_current_active_user)):
+    print("aaaaaa")
     """Get current user's subscription information"""
     subscriptions_collection = user_db["subscriptions"]
     subscription_doc = subscriptions_collection.find_one({
