@@ -187,11 +187,12 @@ async def get_current_active_user(current_user: User = Depends(get_current_user)
         raise HTTPException(status_code=400, detail="Inactive user")
     return current_user
 
-async def get_subscription(current_user: Subscription = Depends(get_subscriptions)) -> Subscription:
+async def get_subscription(subscription_state: Subscription = Depends(get_subscriptions)) -> Subscription:
     """Get current active user"""
-    if not current_user.is_active:
+    print("assdds")
+    if not subscription_state.ends_at:
         raise HTTPException(status_code=400, detail="Inactive user")
-    return current_user
+    return subscription_state
 
 async def get_current_subscribed_user(current_user: User = Depends(get_current_active_user)) -> User:
     """Get current user with active subscription or admin user"""
