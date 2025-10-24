@@ -283,7 +283,7 @@ async def get_user_subscription(current_user: User = Depends(get_current_active_
     """Get current user's subscription information"""
     subscriptions_collection = user_db["subscriptions"]
     subscription_doc = subscriptions_collection.find_one({
-        "_id": ObjectId(current_user.id)
+        "_id": ObjectId(current_user.subscription_id)
     }, sort=[("created_at", -1)])  # Get most recent subscription
     print("----------------------",subscription_doc)
     if subscription_doc:
