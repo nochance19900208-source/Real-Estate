@@ -33,6 +33,7 @@ class SubscriptionRequest(BaseModel):
 # This is the endpoint your frontend is likely calling
 @app.post("/create-checkout-session")  # Note: Changed from /api/create-subscription
 async def create_checkout_session(request: SubscriptionRequest):
+    print("asdfasdfasdfasdfasdfasdfasdfasdfasdf")
     try:
         # Find or create a price based on the amount
         # In a real app, you might look up an existing price or create one
