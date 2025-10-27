@@ -1,84 +1,76 @@
-from fastapi import FastAPI, HTTPException, Depends
-import os, stripe, json
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from core.config import settings
 import stripe
 from typing import Optional
+import os, stripe, json
 from dotenv import load_dotenv
 load_dotenv()
-app = FastAPI()
+
 
 
 STRIPE_SECRET_KEY = os.getenv("STRIPE_SECRET_KEY")
-stripe_price_id = os.getenv("STRIPE_PRODUCT_ID")
-# Configure CORS to allow requests from your frontend
+# stripe_price_id = os.getenv("STRIPE_PRODUCT_ID")
+
+app = FastAPI()
+
+# Configure CORS - make sure to include your frontend origin
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Update with your frontend URL
+    allow_origins=["*"],  # In production, specify your frontend domain
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# Set your Stripe API key
+
 
 class SubscriptionRequest(BaseModel):
     paymentMethodId: str
     amount: float
-    customerId: Optional[str] = None
-    priceId: Optional[str] = None
-
-@app.post("/create-subscription")
-async def create_subscription(request: SubscriptionRequest):
+    
+# This is the endpoint your frontend is likely calling
+@app.post("/create-checkout-session")  # Note: Changed from /api/create-subscription
+async def create_checkout_session(request: SubscriptionRequest):
     try:
-        # If no priceId is provided, use a default price or create one based on the amount
-        price_id = request.priceId
-        if not price_id:
-            # You might want to look up an existing price based on the amount
-            # or create a new price if needed
-            price_id = stripe_price_id  # Replace with your price ID logic
+        # Find or create a price based on the amount
+        # In a real app, you might look up an existing price or create one
+        amount_in_cents = int(request.amount * 100)
         
-        # If a customerId is provided, use it; otherwise create a new customer
-        if request.customerId:
-            customer = stripe.Customer.retrieve(request.customerId)
-            # Attach the payment method to the customer
-            stripe.PaymentMethod.attach(
-                request.paymentMethodId,
-                customer=customer.id
-            )
-        else:
-            # Create a new customer with the payment method
-            customer = stripe.Customer.create(
-                payment_method=request.paymentMethodId,
-                email="amazon@example.com",  # In a real app, get this from authenticated user
-                invoice_settings={
-                    'default_payment_method': request.paymentMethodId,
-                },
-            )
+        # For testing, we'll create a price on the fly
+        # In production, you should create prices in the dashboard and reference them
+        price = stripe.Price.create(
+            unit_amount=amount_in_cents,
+            currency="usd",
+            recurring={"interval": "month"},
+            product_data={
+                "name": f"Monthly Subscription ${request.amount}"
+            },
+        )
         
-        # Set the customer's default payment method
-        stripe.Customer.modify(
-            customer.id,
+        # Create a customer
+        customer = stripe.Customer.create(
+            payment_method=request.paymentMethodId,
             invoice_settings={
                 'default_payment_method': request.paymentMethodId,
-            }
+            },
         )
         
         # Create the subscription
         subscription = stripe.Subscription.create(
             customer=customer.id,
             items=[
-                {"price": stripe_price_id},
+                {"price": price.id},
             ],
             payment_behavior="default_incomplete",
+            payment_settings={"save_default_payment_method": "on_subscription"},
             expand=["latest_invoice.payment_intent"],
         )
         
         latest_invoice = subscription.latest_invoice
         payment_intent = latest_invoice.payment_intent
         
-        # Return different responses based on the payment intent status
         if payment_intent.status == "requires_action":
             return {
                 "requiresAction": True,
@@ -92,46 +84,20 @@ async def create_subscription(request: SubscriptionRequest):
             }
         else:
             return {
-                "error": "Payment failed",
-                "paymentIntentStatus": payment_intent.status
+                "error": f"Payment failed with status: {payment_intent.status}"
             }
             
     except stripe.error.StripeError as e:
-        # Handle Stripe-specific errors
-        error_message = e.user_message if hasattr(e, 'user_message') else str(e)
-        raise HTTPException(status_code=400, detail=error_message)
-    
+        print(f"Stripe error: {str(e)}")
+        raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
-        # Handle other errors
+        print(f"Unexpected error: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
-# Optional: Add an endpoint to fetch subscription details
-@app.get("/api/subscription/{subscription_id}")
-async def get_subscription(subscription_id: str):
-    try:
-        subscription = stripe.Subscription.retrieve(
-            subscription_id,
-            expand=["latest_invoice.payment_intent", "customer"]
-        )
-        return {
-            "status": subscription.status,
-            "currentPeriodEnd": subscription.current_period_end,
-            "customerId": subscription.customer.id if subscription.customer else None
-        }
-    except stripe.error.StripeError as e:
-        raise HTTPException(status_code=400, detail=str(e))
-
-# Optional: Add an endpoint to cancel subscription
-@app.delete("/api/subscription/{subscription_id}")
-async def cancel_subscription(subscription_id: str):
-    try:
-        cancelled_subscription = stripe.Subscription.delete(subscription_id)
-        return {
-            "success": True,
-            "status": cancelled_subscription.status
-        }
-    except stripe.error.StripeError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+# You may also want a health check endpoint
+@app.get("/")
+def read_root():
+    return {"status": "API is running"}
 
 if __name__ == "__main__":
     import uvicorn

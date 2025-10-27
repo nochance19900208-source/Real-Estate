@@ -8,7 +8,7 @@ from bson import ObjectId
 from pymongo.errors import ServerSelectionTimeoutError
 from pymongo.errors import PyMongoError
 
-from .models import (   
+from .models import (
     SubscriptionCreateWithUser, SubscriptionCreate, PaymentResponse, 
     Subscription, SubscriptionStatus, User, UserCreate
 )
@@ -23,6 +23,8 @@ from .database import user_db
 STRIPE_SECRET_KEY = os.getenv("STRIPE_SECRET_KEY")
 # Single subscription plan price
 PLAN_PRICE = 20.00
+
+
 
 
 async def process_stripe_subscription_with_user(
