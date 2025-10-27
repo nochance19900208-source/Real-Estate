@@ -23,7 +23,6 @@ app.add_middleware(
 
 # Set your Stripe API key
 
-# Models for request validation
 class SubscriptionRequest(BaseModel):
     paymentMethodId: str
     amount: float
