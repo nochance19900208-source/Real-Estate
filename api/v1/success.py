@@ -11,7 +11,7 @@ load_dotenv()
 
 
 STRIPE_SECRET_KEY = os.getenv("STRIPE_SECRET_KEY")
-# stripe_price_id = os.getenv("STRIPE_PRODUCT_ID")
+STRIPE_PRICE_ID = os.getenv("STRIPE_PRODUCT_ID")
 
 app = FastAPI()
 
@@ -61,7 +61,7 @@ async def create_checkout_session(request: SubscriptionRequest):
         subscription = stripe.Subscription.create(
             customer=customer.id,
             items=[
-                {"price": price.id},
+                {"price": STRIPE_PRICE_ID},
             ],
             payment_behavior="default_incomplete",
             payment_settings={"save_default_payment_method": "on_subscription"},
